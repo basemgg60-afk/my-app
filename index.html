@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مايك إفكتس - أصوات وتسجيل وتحويل كلام لنص</title>
+<style>
+  :root{
+    --bg1:#0f1216;
+    --bg2:#171b21;
+    --panel:#1c2129;
+    --panel-line:#2a3038;
+    --accent:#3ee08c;
+    --accent-dim:#1e6b46;
+    --accent2:#ff5f6d;
+    --warn:#ffb020;
+    --text:#e8ecef;
+    --text-dim:#8b95a1;
+    --danger:#ff5f6d;
+    --font-display:'Tahoma','Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 20% -10%, #1c2530 0%, transparent 55%),
+      radial-gradient(circle at 100% 110%, #201824 0%, transparent 55%),
+      linear-gradient(180deg,var(--bg1),var(--bg2));
+    color:var(--text);
+    font-family:var(--font-display);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px 14px;
+  }
+
+  .card{
+    width:100%;
+    max-width:480px;
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:20px;
+    padding:22px 20px 26px;
+    box-shadow:0 20px 60px rgba(0,0,0,.45);
+    position:relative;
+    overflow:hidden;
+  }
+  .card::before{
+    content:"";
+    position:absolute; inset:0 0 auto 0; height:3px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent));
+    background-size:200% 100%;
+    animation:flow 4s linear infinite;
+  }
+  @keyframes flow{ to{background-position:200% 0;} }
+
+  h1{
+    font-size:20px;
+    margin:6px 0 2px;
+    letter-spacing:.3px;
+  }
+  .sub{
+    color:var(--text-dim);
+    font-size:13px;
+    margin-bottom:18px;
+  }
+
+  .stage{
+    background:#0c0f13;
+    border:1px solid var(--panel-line);
+    border-radius:14px;
+    padding:14px;
+    margin-bottom:18px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  #meterCanvas{
+    width:100%;
+    height:64px;
+    display:block;
+    border-radius:8px;
+  }
+  .status-dot{
+    width:11px;height:11px;border-radius:50%;
+    background:#484f59;
+    flex:0 0 auto;
+    transition:background .2s, box-shadow .2s;
+  }
+  .status-dot.live{
+    background:var(--accent);
+    box-shadow:0 0 10px 2px rgba(62,224,140,.6);
+    animation:pulse 1.4s ease-in-out infinite;
+  }
+  .status-dot.clip{
+    background:var(--danger) !important;
+    box-shadow:0 0 12px 3px rgba(255,95,109,.8) !important;
+    animation:none !important;
+  }
+  @keyframes pulse{
+    0%,100%{opacity:1;} 50%{opacity:.45;}
+  }
+
+  .latency-badge{
+    font-size:10.5px;
+    color:var(--accent);
+    background:rgba(62,224,140,.1);
+    border:1px solid rgba(62,224,140,.3);
+    border-radius:20px;
+    padding:2px 8px;
+    white-space:nowrap;
+    flex:0 0 auto;
+  }
+
+  .mic-btn{
+    width:100%;
+    padding:15px;
+    border:none;
+    border-radius:14px;
+    font-family:inherit;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    background:var(--accent);
+    color:#06170f;
+    transition:transform .12s, filter .12s;
+    margin-bottom:20px;
+  }
+  .mic-btn:active{ transform:scale(.98); }
+  .mic-btn.recording{
+    background:var(--danger);
+    color:#2a0709;
+  }
+  .mic-btn:disabled{ filter:grayscale(.6); opacity:.6; cursor:not-allowed; }
+
+  .section{
+    border-top:1px solid var(--panel-line);
+    padding-top:16px;
+    margin-top:16px;
+  }
+  .section-title{
+    font-size:13px;
+    font-weight:700;
+    color:var(--accent);
+    margin-bottom:12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .section-title .lbl{ display:flex; align-items:center; gap:8px; }
+  .section-title .n{
+    background:var(--accent-dim);
+    color:var(--accent);
+    width:20px;height:20px;
+    border-radius:6px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;
+    flex:0 0 auto;
+  }
+  .mini-btn{
+    background:#12161c;
+    border:1px solid var(--panel-line);
+    color:var(--text-dim);
+    font-family:inherit;
+    font-size:11px;
+    padding:4px 10px;
+    border-radius:20px;
+    cursor:pointer;
+  }
+  .mini-btn:active{ transform:scale(.96); }
+
+  .voice-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:7px;
+    margin-bottom:14px;
+  }
+  .voice-opt{
+    background:#12161c;
+    border:1px solid var(--panel-line);
+    border-radius:10px;
+    padding:9px 2px;
+    text-align:center;
+    cursor:pointer;
+    font-size:11.5px;
+    color:var(--text-dim);
+    transition:.15s;
+    user-select:none;
+  }
+  .voice-opt .emoji{ font-size:18px; display:block; margin-bottom:3px; }
+  .voice-opt.active{
+    border-color:var(--accent);
+    color:var(--text);
+    background:linear-gradient(180deg,rgba(62,224,140,.14),rgba(62,224,140,.03));
+  }
+
+  .row{
+    margin-bottom:14px;
+  }
+  .row-label{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+    color:var(--text-dim);
+    margin-bottom:6px;
+  }
+  .row-label b{ color:var(--text); font-weight:600; }
+  .row-label span.val{ color:var(--accent); font-weight:700; direction:ltr; display:inline-block; }
+  .row-label span.val.hot{ color:var(--accent2); }
+
+  input[type=range]{
+    width:100%;
+    -webkit-appearance:none;
+    appearance:none;
+    height:6px;
+    border-radius:4px;
+    background:#0c0f13;
+    border:1px solid var(--panel-line);
+    outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:18px;height:18px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid #06170f;
+    cursor:pointer;
+    margin-top:-1px;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:18px;height:18px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid #06170f;
+    cursor:pointer;
+  }
+  input[type=range]:disabled{ opacity:.35; }
+
+  .switch-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:12px;
+  }
+  .switch{
+    position:relative;
+    width:46px; height:26px;
+    flex:0 0 auto;
+  }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider-track{
+    position:absolute; inset:0;
+    background:#0c0f13;
+    border:1px solid var(--panel-line);
+    border-radius:20px;
+    cursor:pointer;
+    transition:.2s;
+  }
+  .slider-track::before{
+    content:"";
+    position:absolute;
+    height:18px; width:18px;
+    right:3px; top:3px;
+    background:var(--text-dim);
+    border-radius:50%;
+    transition:.2s;
+  }
+  .switch input:checked + .slider-track{
+    background:var(--accent-dim);
+    border-color:var(--accent);
+  }
+  .switch input:checked + .slider-track::before{
+    right:23px;
+    background:var(--accent);
+  }
+  .switch input:disabled + .slider-track{ opacity:.35; cursor:not-allowed; }
+
+  .echo-controls{
+    max-height:0;
+    overflow:hidden;
+    transition:max-height .25s ease;
+  }
+  .echo-controls.open{ max-height:260px; }
+
+  .hint{
+    font-size:11.5px;
+    color:var(--text-dim);
+    line-height:1.7;
+    background:#12161c;
+    border:1px solid var(--panel-line);
+    border-radius:10px;
+    padding:10px 12px;
+    margin-top:18px;
+  }
+  .hint b{ color:var(--accent2); }
+
+  .perm-error{
+    display:none;
+    background:rgba(255,95,109,.12);
+    border:1px solid rgba(255,95,109,.4);
+    color:#ffb3ba;
+    font-size:12.5px;
+    padding:10px 12px;
+    border-radius:10px;
+    margin-bottom:14px;
+    line-height:1.6;
+  }
+
+  /* Recording section */
+  .rec-btn{
+    width:100%;
+    padding:13px;
+    border:none;
+    border-radius:12px;
+    font-family:inherit;
+    font-size:14.5px;
+    font-weight:700;
+    cursor:pointer;
+    background:#12161c;
+    border:1px solid var(--panel-line);
+    color:var(--text);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    transition:.15s;
+  }
+  .rec-btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .rec-btn.active{
+    background:rgba(255,95,109,.12);
+    border-color:var(--danger);
+    color:#ffb3ba;
+  }
+  .rec-dot{
+    width:9px;height:9px;border-radius:50%;
+    background:var(--danger);
+    flex:0 0 auto;
+  }
+  .rec-btn.active .rec-dot{ animation:pulse 1s ease-in-out infinite; }
+  .rec-timer{
+    font-size:11.5px;
+    color:var(--text-dim);
+    text-align:center;
+    margin-top:8px;
+    direction:ltr;
+  }
+
+  .rec-list{ margin-top:14px; }
+  .rec-item{
+    background:#12161c;
+    border:1px solid var(--panel-line);
+    border-radius:10px;
+    padding:10px;
+    margin-bottom:8px;
+  }
+  .rec-item-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:11.5px;
+    color:var(--text-dim);
+    margin-bottom:6px;
+  }
+  .rec-item audio{
+    width:100%;
+    height:32px;
+    margin-bottom:6px;
+  }
+  .rec-actions{ display:flex; gap:8px; }
+  .rec-actions a, .rec-actions button{
+    flex:1;
+    text-align:center;
+    text-decoration:none;
+    font-size:11.5px;
+    padding:6px 8px;
+    border-radius:8px;
+    border:1px solid var(--panel-line);
+    background:#0c0f13;
+    color:var(--text);
+    font-family:inherit;
+    cursor:pointer;
+  }
+  .rec-actions .del{ color:var(--accent2); }
+  .rec-empty{
+    font-size:12px;
+    color:var(--text-dim);
+    text-align:center;
+    padding:10px 0;
+  }
+
+  /* Transcript section */
+  .transcript-box{
+    background:#0c0f13;
+    border:1px solid var(--panel-line);
+    border-radius:10px;
+    padding:12px;
+    min-height:70px;
+    max-height:170px;
+    overflow-y:auto;
+    font-size:13.5px;
+    line-height:1.9;
+    margin-top:2px;
+  }
+  .transcript-box .placeholder{ color:var(--text-dim); }
+  .transcript-box .interim{ color:var(--text-dim); font-style:italic; }
+  .unsupported-note{
+    font-size:11.5px;
+    color:var(--warn);
+    background:rgba(255,176,32,.1);
+    border:1px solid rgba(255,176,32,.3);
+    border-radius:10px;
+    padding:8px 10px;
+    display:none;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>🎙️ مايك إفكتس (نقي بدون صفير)</h1>
+  <div class="sub">تعلية صوت احترافية + 8 أصوات مختلفة + تسجيل + تحويل الكلام لنص</div>
+
+  <div class="perm-error" id="permError">
+    مقدرش أوصل للمايك. تأكد إنك سامح للموقع بصلاحية المايكروفون من إعدادات المتصفح، وجرّب تاني.
+  </div>
+
+  <div class="stage">
+    <div class="status-dot" id="statusDot"></div>
+    <canvas id="meterCanvas"></canvas>
+    <div class="latency-badge" id="latencyBadge">-- ms</div>
+  </div>
+
+  <button class="mic-btn" id="micBtn">ابدأ التحدث 🎤</button>
+
+  <div class="section">
+    <div class="section-title"><span class="lbl"><span class="n">1</span> اختَر شخصية الصوت</span></div>
+    <div class="voice-grid" id="voiceGrid">
+      <div class="voice-opt active" data-preset="normal"><span class="emoji">🙂</span>طبيعي</div>
+      <div class="voice-opt" data-preset="young"><span class="emoji">🧑</span>شاب</div>
+      <div class="voice-opt" data-preset="male"><span class="emoji">🧔</span>راجل</div>
+      <div class="voice-opt" data-preset="old"><span class="emoji">👴</span>عجوز</div>
+      <div class="voice-opt" data-preset="female"><span class="emoji">👩</span>ست</div>
+      <div class="voice-opt" data-preset="child"><span class="emoji">🧒</span>طفل</div>
+      <div class="voice-opt" data-preset="robot"><span class="emoji">🤖</span>روبوت</div>
+      <div class="voice-opt" data-preset="monster"><span class="emoji">👹</span>وحش</div>
+    </div>
+    <div class="row">
+      <div class="row-label"><b>ضبط دقيق للطبقة (فوق الشخصية المختارة)</b><span class="val" id="pitchVal">1.00x</span></div>
+      <input type="range" id="pitchSlider" min="0.4" max="2.2" step="0.01" value="1.0">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="lbl"><span class="n">2</span> تعلية الصوت (نظام دي جي)</span></div>
+    <div class="row">
+      <div class="row-label"><b>مستوى الصوت القوي</b><span class="val" id="gainVal">3.0x</span></div>
+      <input type="range" id="gainSlider" min="1" max="15" step="0.1" value="3">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="lbl"><span class="n">3</span> الصدى (Echo)</span></div>
+    <div class="switch-row">
+      <span style="font-size:13px;color:var(--text-dim)">تفعيل الصدى</span>
+      <label class="switch">
+        <input type="checkbox" id="echoToggle">
+        <span class="slider-track"></span>
+      </label>
+    </div>
+    <div class="echo-controls" id="echoControls">
+      <div class="row">
+        <div class="row-label"><b>زمن الصدى</b><span class="val" id="delayVal">0.30s</span></div>
+        <input type="range" id="delaySlider" min="0.05" max="1" step="0.01" value="0.3">
+      </div>
+      <div class="row">
+        <div class="row-label"><b>تكرار الصدى</b><span class="val" id="feedbackVal">35%</span></div>
+        <input type="range" id="feedbackSlider" min="0" max="0.8" step="0.01" value="0.35">
+      </div>
+      <div class="row">
+        <div class="row-label"><b>مقدار الصدى بالنسبة للصوت الأصلي</b><span class="val" id="mixVal">30%</span></div>
+        <input type="range" id="mixSlider" min="0" max="1" step="0.01" value="0.3">
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="lbl"><span class="n">4</span> تسجيل الصوت المعدّل</span></div>
+    <button class="rec-btn" id="recBtn" disabled>
+      <span class="rec-dot"></span>
+      <span id="recBtnLabel">ابدأ المايك الأول عشان تسجل</span>
+    </button>
+    <div class="rec-timer" id="recTimer"></div>
+    <div class="rec-list" id="recList">
+      <div class="rec-empty" id="recEmpty">لسه مفيش تسجيلات</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">
+      <span class="lbl"><span class="n">5</span> تحويل الكلام لنص</span>
+      <button class="mini-btn" id="clearTranscriptBtn">مسح</button>
+    </div>
+    <div class="switch-row">
+      <span style="font-size:13px;color:var(--text-dim)">تفعيل الكتابة أثناء الكلام</span>
+      <label class="switch">
+        <input type="checkbox" id="transcriptToggle">
+        <span class="slider-track"></span>
+      </label>
+    </div>
+    <div class="unsupported-note" id="unsupportedNote">
+      المتصفح ده مش بيدعم تحويل الكلام لنص. جرب من كروم (Chrome).
+    </div>
+    <div class="transcript-box" id="transcriptBox">
+      <span class="placeholder" id="transcriptPlaceholder">هيظهر هنا كل كلام تقوله وانت شغل المايك...</span>
+    </div>
+  </div>
+
+  <div class="hint">
+    ⚠️ <b>ملحوظة هامة جداً لمنع الصفير (الوشوشة):</b> لازم تستخدم <b>سماعة أذن (هيدفون / إيربودز)</b> عشان المايك مايلقطش صوت السماعة الخارجية ويحصل صفير التداخل (Feedback). التسجيل بياخد الصوت <b>بعد كل التأثيرات</b>، مش الصوت الخام.
+  </div>
+</div>
+
+<script>
+(function(){
+  const micBtn = document.getElementById('micBtn');
+  const statusDot = document.getElementById('statusDot');
+  const permError = document.getElementById('permError');
+  const latencyBadge = document.getElementById('latencyBadge');
+
+  const pitchSlider = document.getElementById('pitchSlider');
+  const pitchVal = document.getElementById('pitchVal');
+  const voiceOpts = document.querySelectorAll('.voice-opt');
+
+  const gainSlider = document.getElementById('gainSlider');
+  const gainVal = document.getElementById('gainVal');
+
+  const echoToggle = document.getElementById('echoToggle');
+  const echoControls = document.getElementById('echoControls');
+  const delaySlider = document.getElementById('delaySlider');
+  const delayVal = document.getElementById('delayVal');
+  const feedbackSlider = document.getElementById('feedbackSlider');
+  const feedbackVal = document.getElementById('feedbackVal');
+  const mixSlider = document.getElementById('mixSlider');
+  const mixVal = document.getElementById('mixVal');
+
+  const canvas = document.getElementById('meterCanvas');
+  const ctx2d = canvas.getContext('2d');
+
+  const recBtn = document.getElementById('recBtn');
+  const recBtnLabel = document.getElementById('recBtnLabel');
+  const recTimer = document.getElementById('recTimer');
+  const recList = document.getElementById('recList');
+  const recEmpty = document.getElementById('recEmpty');
+
+  const transcriptToggle = document.getElementById('transcriptToggle');
+  const transcriptBox = document.getElementById('transcriptBox');
+  const transcriptPlaceholder = document.getElementById('transcriptPlaceholder');
+  const clearTranscriptBtn = document.getElementById('clearTranscriptBtn');
+  const unsupportedNote = document.getElementById('unsupportedNote');
+
+  let audioCtx = null;
+  let stream = null;
+  let sourceNode = null;
+  let pitchNode = null;
+  let highPassFilter = null; // إزالة الوشوشة تحت 85 هرتز
+  let lowPassFilter = null;  // إزالة الصفير فوق 12 كيلو هرتز
+  let charHP = null, charLP = null; // فلاتر شخصية الصوت (زي نطاق التليفون للعجوز/الروبوت)
+  let voiceLow = null, voiceHigh = null;
+  let distShaper = null;    // تشويه/خشونة للروبوت والوحش والعجوز
+  let tremOsc = null, tremDepthGain = null, tremGain = null; // رعشة (تريمولو) لصوت العجوز
+  let ringOsc = null, ringDepthGain = null, ringGain = null; // مضمن حلقي لصوت الروبوت/الوحش
+  let boostGain = null;
+  let compressor = null;
+  let limiter = null;
+  let masterOut = null;
+  let dryGain = null, wetGain = null, delayNode = null, feedbackGain = null;
+  let analyser = null;
+  let recordDest = null;
+  let rafId = null;
+  let running = false;
+  let clipHoldUntil = 0;
+  let currentPresetName = 'normal';
+
+  // ---- شخصيات الصوت: كل واحدة بمزيج مختلف من الطبقة/اللون/التأثيرات ----
+  const PRESETS = {
+    normal:  { pitch:1.00, lowGain:0,  highGain:0,   charHP:20,  charLP:20000, tremRate:5,   tremDepth:0,    ringRate:30, ringDepth:0,    distortion:0    },
+    young:   { pitch:0.88, lowGain:-2, highGain:4,   charHP:20,  charLP:20000, tremRate:5,   tremDepth:0,    ringRate:30, ringDepth:0,    distortion:0    },
+    male:    { pitch:0.65, lowGain:7,  highGain:-6,  charHP:20,  charLP:20000, tremRate:5,   tremDepth:0,    ringRate:30, ringDepth:0,    distortion:0    },
+    old:     { pitch:0.80, lowGain:3,  highGain:-10, charHP:280, charLP:3400,  tremRate:5.5, tremDepth:0.28, ringRate:30, ringDepth:0,    distortion:0.15 },
+    female:  { pitch:1.55, lowGain:-4, highGain:7,   charHP:20,  charLP:20000, tremRate:5,   tremDepth:0,    ringRate:30, ringDepth:0,    distortion:0    },
+    child:   { pitch:1.90, lowGain:-8, highGain:10,  charHP:20,  charLP:20000, tremRate:5,   tremDepth:0,    ringRate:30, ringDepth:0,    distortion:0    },
+    robot:   { pitch:0.97, lowGain:0,  highGain:3,   charHP:150, charLP:6000,  tremRate:5,   tremDepth:0,    ringRate:45, ringDepth:0.85, distortion:0.3  },
+    monster: { pitch:0.50, lowGain:10, highGain:-8,  charHP:20,  charLP:20000, tremRate:6,   tremDepth:0.12, ringRate:12, ringDepth:0.3,  distortion:0.55 }
+  };
+
+  // ---------- Robust, low-latency, click-free granular pitch shifter ----------
+  function createPitchShifter(context, initialPitch){
+    const processBufferSize = 2048;
+    const node = context.createScriptProcessor(processBufferSize, 1, 1);
+
+    const grainSize = 2048;
+    const circLen = grainSize * 4;
+    const circBuf = new Float32Array(circLen);
+    let writePos = 0;
+
+    let envA = 0;
+    let envB = grainSize >> 1;
+    let readA = 0;
+    let readB = 0;
+
+    node.pitchRatio = initialPitch;
+
+    function hann(phase, size){
+      return 0.5 - 0.5 * Math.cos((2 * Math.PI * phase) / size);
+    }
+    function readInterp(pos){
+      let p = pos % circLen;
+      if (p < 0) p += circLen;
+      const i0 = Math.floor(p);
+      const i1 = (i0 + 1) % circLen;
+      const frac = p - i0;
+      return circBuf[i0] * (1 - frac) + circBuf[i1] * frac;
+    }
+
+    node.onaudioprocess = function(e){
+      const input = e.inputBuffer.getChannelData(0);
+      const output = e.outputBuffer.getChannelData(0);
+      const ratio = node.pitchRatio;
+
+      for (let i = 0; i < input.length; i++){
+        circBuf[writePos] = input[i];
+
+        if (envA === 0) { readA = writePos - grainSize; }
+        if (envB === 0) { readB = writePos - grainSize; }
+
+        const sA = readInterp(readA) * hann(envA, grainSize);
+        const sB = readInterp(readB) * hann(envB, grainSize);
+        output[i] = sA + sB;
+
+        readA += ratio;
+        readB += ratio;
+        envA = (envA + 1) % grainSize;
+        envB = (envB + 1) % grainSize;
+        writePos = (writePos + 1) % circLen;
+      }
+    };
+    return node;
+  }
+
+  function makeDistortionCurve(amount){
+    const n = 1024;
+    const curve = new Float32Array(n);
+    if (amount <= 0){
+      for (let i=0;i<n;i++){ curve[i] = (i*2)/n - 1; }
+      return curve;
+    }
+    const k = amount * 100;
+    for (let i=0;i<n;i++){
+      const x = (i*2)/n - 1;
+      curve[i] = (1+k) * x / (1 + k*Math.abs(x));
+    }
+    return curve;
+  }
+
+  function applyVoicePreset(presetName){
+    const p = PRESETS[presetName] || PRESETS.normal;
+    currentPresetName = presetName;
+    pitchSlider.value = p.pitch;
+    pitchVal.textContent = p.pitch.toFixed(2) + 'x';
+    if (pitchNode) pitchNode.pitchRatio = p.pitch;
+
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+
+    if (voiceLow && voiceHigh){
+      voiceLow.gain.setTargetAtTime(p.lowGain, t, 0.02);
+      voiceHigh.gain.setTargetAtTime(p.highGain, t, 0.02);
+    }
+    if (charHP && charLP){
+      charHP.frequency.setTargetAtTime(p.charHP, t, 0.02);
+      charLP.frequency.setTargetAtTime(p.charLP, t, 0.02);
+    }
+    if (distShaper){
+      distShaper.curve = makeDistortionCurve(p.distortion);
+    }
+    if (tremOsc && tremDepthGain && tremGain){
+      tremOsc.frequency.setTargetAtTime(p.tremRate, t, 0.02);
+      tremDepthGain.gain.setTargetAtTime(p.tremDepth/2, t, 0.02);
+      tremGain.gain.setTargetAtTime(1 - p.tremDepth/2, t, 0.02);
+    }
+    if (ringOsc && ringDepthGain && ringGain){
+      ringOsc.frequency.setTargetAtTime(p.ringRate, t, 0.02);
+      ringDepthGain.gain.setTargetAtTime(p.ringDepth, t, 0.02);
+      ringGain.gain.setTargetAtTime(1 - p.ringDepth, t, 0.02);
+    }
+  }
+
+  voiceOpts.forEach(opt => {
+    opt.addEventListener('click', () => {
+      voiceOpts.forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      applyVoicePreset(opt.dataset.preset);
+    });
+  });
+
+  pitchSlider.addEventListener('input', () => {
+    voiceOpts.forEach(o => o.classList.remove('active'));
+    pitchVal.textContent = Number(pitchSlider.value).toFixed(2) + 'x';
+    if (pitchNode) pitchNode.pitchRatio = Number(pitchSlider.value);
+  });
+
+  gainSlider.addEventListener('input', () => {
+    const v = Number(gainSlider.value);
+    gainVal.textContent = v.toFixed(1) + 'x';
+    gainVal.classList.toggle('hot', v >= 7);
+    if (boostGain) boostGain.gain.setTargetAtTime(v, audioCtx.currentTime, 0.01);
+  });
+
+  echoToggle.addEventListener('change', () => {
+    echoControls.classList.toggle('open', echoToggle.checked);
+    updateEchoMix();
+  });
+  delaySlider.addEventListener('input', () => {
+    delayVal.textContent = Number(delaySlider.value).toFixed(2) + 's';
+    if (delayNode) delayNode.delayTime.setTargetAtTime(Number(delaySlider.value), audioCtx.currentTime, 0.01);
+  });
+  feedbackSlider.addEventListener('input', () => {
+    feedbackVal.textContent = Math.round(feedbackSlider.value * 100) + '%';
+    if (feedbackGain) feedbackGain.gain.setTargetAtTime(Number(feedbackSlider.value), audioCtx.currentTime, 0.01);
+  });
+  mixSlider.addEventListener('input', () => {
+    mixVal.textContent = Math.round(mixSlider.value * 100) + '%';
+    updateEchoMix();
+  });
+
+  function updateEchoMix(){
+    if (!wetGain || !dryGain) return;
+    const mix = echoToggle.checked ? Number(mixSlider.value) : 0;
+    wetGain.gain.setTargetAtTime(mix, audioCtx.currentTime, 0.01);
+    dryGain.gain.setTargetAtTime(1, audioCtx.currentTime, 0.01);
+  }
+
+  function drawMeter(){
+    if (!analyser) return;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    function loop(){
+      rafId = requestAnimationFrame(loop);
+      analyser.getByteTimeDomainData(dataArray);
+
+      const w = canvas.width = canvas.clientWidth * devicePixelRatio;
+      const h = canvas.height = canvas.clientHeight * devicePixelRatio;
+      ctx2d.clearRect(0,0,w,h);
+
+      let peak = 0;
+      ctx2d.lineWidth = 2 * devicePixelRatio;
+      ctx2d.strokeStyle = '#3ee08c';
+      ctx2d.beginPath();
+      const slice = w / bufferLength;
+      let x = 0;
+      for (let i=0;i<bufferLength;i++){
+        const v = dataArray[i]/128.0;
+        peak = Math.max(peak, Math.abs(v-1));
+        const y = (v * h) / 2;
+        if (i===0) ctx2d.moveTo(x,y); else ctx2d.lineTo(x,y);
+        x += slice;
+      }
+      ctx2d.stroke();
+
+      const now = performance.now();
+      if (peak > 0.97) clipHoldUntil = now + 400;
+      if (now < clipHoldUntil) statusDot.classList.add('clip');
+      else statusDot.classList.remove('clip');
+    }
+    loop();
+  }
+
+  // ================= التسجيل =================
+  let mediaRecorder = null;
+  let recChunks = [];
+  let recStartTime = 0;
+  let recTimerInterval = null;
+  let isRecording = false;
+  let recCount = 0;
+
+  function pickMimeType(){
+    const options = ['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4'];
+    for (const o of options){
+      if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(o)) return o;
+    }
+    return '';
+  }
+
+  function fmtTime(sec){
+    const m = Math.floor(sec/60).toString().padStart(2,'0');
+    const s = Math.floor(sec%60).toString().padStart(2,'0');
+    return m+':'+s;
+  }
+
+  function startRecording(){
+    if (!recordDest || !window.MediaRecorder) return;
+    recChunks = [];
+    const mime = pickMimeType();
+    try{
+      mediaRecorder = mime ? new MediaRecorder(recordDest.stream, {mimeType:mime}) : new MediaRecorder(recordDest.stream);
+    }catch(err){
+      console.error(err);
+      return;
+    }
+    mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size>0) recChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recChunks, {type: mediaRecorder.mimeType || 'audio/webm'});
+      addRecordingToList(blob);
+    };
+    mediaRecorder.start();
+    isRecording = true;
+    recStartTime = Date.now();
+    recBtn.classList.add('active');
+    recBtnLabel.textContent = 'إيقاف التسجيل';
+    recTimerInterval = setInterval(() => {
+      recTimer.textContent = fmtTime((Date.now()-recStartTime)/1000);
+    }, 250);
+  }
+
+  function stopRecording(){
+    if (mediaRecorder && isRecording){
+      mediaRecorder.stop();
+    }
+    isRecording = false;
+    recBtn.classList.remove('active');
+    recBtnLabel.textContent = 'ابدأ التسجيل ⏺';
+    if (recTimerInterval) clearInterval(recTimerInterval);
+    recTimer.textContent = '';
+  }
+
+  function addRecordingToList(blob){
+    recCount++;
+    if (recEmpty) recEmpty.style.display = 'none';
+    const url = URL.createObjectURL(blob);
+    const ext = (blob.type.indexOf('ogg')>-1) ? 'ogg' : (blob.type.indexOf('mp4')>-1 ? 'm4a' : 'webm');
+    const item = document.createElement('div');
+    item.className = 'rec-item';
+    const now = new Date();
+    const label = 'تسجيل ' + recCount + ' — ' + now.toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'});
+    item.innerHTML =
+      '<div class="rec-item-head"><span>'+label+'</span></div>' +
+      '<audio controls src="'+url+'"></audio>' +
+      '<div class="rec-actions">' +
+        '<a href="'+url+'" download="voice-fx-'+recCount+'.'+ext+'">تحميل ⬇</a>' +
+        '<button class="del" type="button">حذف 🗑</button>' +
+      '</div>';
+    item.querySelector('.del').addEventListener('click', () => {
+      URL.revokeObjectURL(url);
+      item.remove();
+      if (!recList.querySelector('.rec-item')) recEmpty.style.display = 'block';
+    });
+    recList.insertBefore(item, recList.firstChild);
+  }
+
+  recBtn.addEventListener('click', () => {
+    if (!running) return;
+    if (!isRecording) startRecording(); else stopRecording();
+  });
+
+  // ================= تحويل الكلام لنص =================
+  let recognition = null;
+  let recognitionSupported = false;
+  let recognitionShouldRun = false;
+  let finalTranscript = '';
+
+  const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRecognitionAPI){
+    recognitionSupported = true;
+    recognition = new SpeechRecognitionAPI();
+    recognition.lang = 'ar-EG';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = (e) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++){
+        const txt = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalTranscript += txt + ' ';
+        else interim += txt;
+      }
+      renderTranscript(interim);
+    };
+    recognition.onerror = (e) => {
+      console.warn('speech recognition error', e.error);
+    };
+    recognition.onend = () => {
+      if (recognitionShouldRun && running){
+        try{ recognition.start(); }catch(err){}
+      }
+    };
+  } else {
+    unsupportedNote.style.display = 'block';
+    transcriptToggle.disabled = true;
+  }
+
+  function renderTranscript(interim){
+    if (!finalTranscript && !interim){
+      transcriptBox.innerHTML = '<span class="placeholder" id="transcriptPlaceholder">هيظهر هنا كل كلام تقوله وانت شغل المايك...</span>';
+      return;
+    }
+    transcriptBox.innerHTML =
+      '<span>' + escapeHtml(finalTranscript) + '</span>' +
+      (interim ? '<span class="interim">' + escapeHtml(interim) + '</span>' : '');
+    transcriptBox.scrollTop = transcriptBox.scrollHeight;
+  }
+  function escapeHtml(s){
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  clearTranscriptBtn.addEventListener('click', () => {
+    finalTranscript = '';
+    renderTranscript('');
+  });
+
+  transcriptToggle.addEventListener('change', () => {
+    recognitionShouldRun = transcriptToggle.checked;
+    if (!recognitionSupported) return;
+    if (recognitionShouldRun && running){
+      try{ recognition.start(); }catch(err){}
+    } else if (!recognitionShouldRun && recognition){
+      try{ recognition.stop(); }catch(err){}
+    }
+  });
+
+  // ================= المايك الرئيسي =================
+  async function startMic(){
+    try{
+      permError.style.display = 'none';
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio:{
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: false,
+          latency:0
+        }
+      });
+
+      sourceNode = audioCtx.createMediaStreamSource(stream);
+      pitchNode = createPitchShifter(audioCtx, Number(pitchSlider.value));
+
+      highPassFilter = audioCtx.createBiquadFilter();
+      highPassFilter.type = 'highpass';
+      highPassFilter.frequency.value = 85;
+
+      lowPassFilter = audioCtx.createBiquadFilter();
+      lowPassFilter.type = 'lowpass';
+      lowPassFilter.frequency.value = 12000;
+
+      charHP = audioCtx.createBiquadFilter();
+      charHP.type = 'highpass';
+      charHP.frequency.value = 20;
+
+      charLP = audioCtx.createBiquadFilter();
+      charLP.type = 'lowpass';
+      charLP.frequency.value = 20000;
+
+      voiceLow = audioCtx.createBiquadFilter();
+      voiceLow.type = 'lowshelf';
+      voiceLow.frequency.value = 250;
+      voiceLow.gain.value = 0;
+
+      voiceHigh = audioCtx.createBiquadFilter();
+      voiceHigh.type = 'highshelf';
+      voiceHigh.frequency.value = 3500;
+      voiceHigh.gain.value = 0;
+
+      distShaper = audioCtx.createWaveShaper();
+      distShaper.curve = makeDistortionCurve(0);
+      distShaper.oversample = '2x';
+
+      // رعشة (تريمولو) - لصوت العجوز
+      tremGain = audioCtx.createGain();
+      tremGain.gain.value = 1;
+      tremOsc = audioCtx.createOscillator();
+      tremOsc.type = 'sine';
+      tremOsc.frequency.value = 5;
+      tremDepthGain = audioCtx.createGain();
+      tremDepthGain.gain.value = 0;
+      tremOsc.connect(tremDepthGain);
+      tremDepthGain.connect(tremGain.gain);
+      tremOsc.start();
+
+      // مضمن حلقي (رينج مود) - لصوت الروبوت والوحش
+      ringGain = audioCtx.createGain();
+      ringGain.gain.value = 1;
+      ringOsc = audioCtx.createOscillator();
+      ringOsc.type = 'sine';
+      ringOsc.frequency.value = 30;
+      ringDepthGain = audioCtx.createGain();
+      ringDepthGain.gain.value = 0;
+      ringOsc.connect(ringDepthGain);
+      ringDepthGain.connect(ringGain.gain);
+      ringOsc.start();
+
+      boostGain = audioCtx.createGain();
+      boostGain.gain.value = Number(gainSlider.value);
+
+      compressor = audioCtx.createDynamicsCompressor();
+      compressor.threshold.value = -24;
+      compressor.knee.value = 15;
+      compressor.ratio.value = 12;
+      compressor.attack.value = 0.003;
+      compressor.release.value = 0.15;
+
+      limiter = audioCtx.createDynamicsCompressor();
+      limiter.threshold.value = -1;
+      limiter.knee.value = 0;
+      limiter.ratio.value = 20;
+      limiter.attack.value = 0.001;
+      limiter.release.value = 0.05;
+
+      masterOut = audioCtx.createGain();
+      masterOut.gain.value = 1;
+
+      delayNode = audioCtx.createDelay(2.0);
+      delayNode.delayTime.value = Number(delaySlider.value);
+      feedbackGain = audioCtx.createGain();
+      feedbackGain.gain.value = Number(feedbackSlider.value);
+      dryGain = audioCtx.createGain();
+      wetGain = audioCtx.createGain();
+      dryGain.gain.value = 1;
+      wetGain.gain.value = 0;
+
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.4;
+
+      recordDest = audioCtx.createMediaStreamDestination();
+
+      // ===== توصيل مسار الصوت =====
+      // source -> تنضيف ضوضاء -> تغيير الطبقة -> فلتر شخصية -> لون الصوت
+      // -> تشويه/خشونة -> رعشة -> رينج مود -> تعلية -> كومبريسور -> ليميتر -> ماستر
+      sourceNode.connect(highPassFilter);
+      highPassFilter.connect(lowPassFilter);
+      lowPassFilter.connect(pitchNode);
+
+      pitchNode.connect(charHP);
+      charHP.connect(charLP);
+      charLP.connect(voiceLow);
+      voiceLow.connect(voiceHigh);
+      voiceHigh.connect(distShaper);
+      distShaper.connect(tremGain);
+      tremGain.connect(ringGain);
+      ringGain.connect(boostGain);
+      boostGain.connect(compressor);
+      compressor.connect(limiter);
+      limiter.connect(masterOut);
+
+      // ماستر -> يابس + صدى -> خروج
+      masterOut.connect(dryGain);
+      dryGain.connect(audioCtx.destination);
+      dryGain.connect(recordDest);
+
+      masterOut.connect(delayNode);
+      delayNode.connect(feedbackGain);
+      feedbackGain.connect(delayNode);
+      delayNode.connect(wetGain);
+      wetGain.connect(audioCtx.destination);
+      wetGain.connect(recordDest);
+
+      masterOut.connect(analyser);
+
+      applyVoicePreset(currentPresetName);
+      updateEchoMix();
+
+      const baseLatency = audioCtx.baseLatency ? Math.round(audioCtx.baseLatency*1000) : 0;
+      const outputLatency = audioCtx.outputLatency ? Math.round(audioCtx.outputLatency*1000) : 0;
+      latencyBadge.textContent = '~' + (baseLatency + outputLatency + 46) + ' ms';
+
+      micBtn.textContent = 'إيقاف 🛑';
+      micBtn.classList.add('recording');
+      statusDot.classList.add('live');
+      running = true;
+      drawMeter();
+
+      recBtn.disabled = false;
+      recBtnLabel.textContent = 'ابدأ التسجيل ⏺';
+
+      if (recognitionSupported && transcriptToggle.checked){
+        recognitionShouldRun = true;
+        try{ recognition.start(); }catch(err){}
+      }
+
+    }catch(err){
+      console.error(err);
+      permError.style.display = 'block';
+      stopMic();
+    }
+  }
+
+  function stopMic(){
+    running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    if (isRecording) stopRecording();
+    if (recognition){
+      recognitionShouldRun = false;
+      try{ recognition.stop(); }catch(err){}
+    }
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    if (audioCtx) audioCtx.close();
+    audioCtx = null; stream = null; sourceNode = null; pitchNode = null;
+    highPassFilter = null; lowPassFilter = null; charHP = null; charLP = null;
+    voiceLow = null; voiceHigh = null; distShaper = null;
+    tremOsc = null; tremDepthGain = null; tremGain = null;
+    ringOsc = null; ringDepthGain = null; ringGain = null;
+    boostGain = null; compressor = null; limiter = null; masterOut = null;
+    delayNode = null; feedbackGain = null;
+    dryGain = null; wetGain = null; analyser = null; recordDest = null;
+
+    micBtn.textContent = 'ابدأ التحدث 🎤';
+    micBtn.classList.remove('recording');
+    statusDot.classList.remove('live');
+    statusDot.classList.remove('clip');
+    latencyBadge.textContent = '-- ms';
+    ctx2d.clearRect(0,0,canvas.width,canvas.height);
+
+    recBtn.disabled = true;
+    recBtnLabel.textContent = 'ابدأ المايك الأول عشان تسجل';
+  }
+
+  micBtn.addEventListener('click', () => {
+    if (!running) startMic(); else stopMic();
+  });
+
+  gainVal.textContent = Number(gainSlider.value).toFixed(1) + 'x';
+  delayVal.textContent = Number(delaySlider.value).toFixed(2) + 's';
+  feedbackVal.textContent = Math.round(feedbackSlider.value*100) + '%';
+  mixVal.textContent = Math.round(mixSlider.value*100) + '%';
+})();
+</script>
+</body>
+</html>
