@@ -1,4 +1,4 @@
-name: Build Windows 7 32-bit EXE
+name: Build EXE
 
 on:
   workflow_dispatch:
@@ -10,26 +10,23 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Download NW.js 32-bit
+    - name: Download NW.js
       run: |
         curl -L -o nw.zip https://dl.nwjs.io/v0.48.0/nwjs-v0.48.0-win-ia32.zip
         Expand-Archive -Path nw.zip -DestinationPath nwjs
     
-    - name: Prepare app files
+    - name: Copy files
       run: |
         mkdir app
         copy index.html app\
         copy package.json app\
-        if exist *.css copy *.css app\
-        if exist *.js copy *.js app\
     
-    - name: Package as EXE
+    - name: Build EXE
       run: |
         copy nwjs\nwjs-v0.48.0-win-ia32\* app\
-        echo "Build complete"
     
-    - name: Upload EXE
+    - name: Upload
       uses: actions/upload-artifact@v4
       with:
-        name: my-app-win7-32bit
+        name: myapp
         path: app/nw.exe
