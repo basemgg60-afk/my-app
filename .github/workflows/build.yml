@@ -15,19 +15,22 @@ jobs:
         curl -L -o nw.zip https://dl.nwjs.io/v0.48.0/nwjs-v0.48.0-win-ia32.zip
         Expand-Archive -Path nw.zip -DestinationPath nwjs
     
+    - name: Create app folder
+      run: mkdir app
+    
     - name: Copy app files
       run: |
-        mkdir app
         copy index.html app\
         copy package.json app\
-        if exist *.css copy *.css app\
-        if exist *.js copy *.js app\
+        Get-ChildItem -Path . -Filter *.css | Copy-Item -Destination app\
+        Get-ChildItem -Path . -Filter *.js | Copy-Item -Destination app\
     
-    - name: Copy NW.js files (with all folders)
+    - name: Copy NW.js files
       run: |
-        xcopy /E /I nwjs\nwjs-v0.48.0-win-ia32 app\
+        robocopy nwjs\nwjs-v0.48.0-win-ia32 app /E
+        exit 0
     
-    - name: Upload all files
+    - name: Upload
       uses: actions/upload-artifact@v4
       with:
         name: myapp
