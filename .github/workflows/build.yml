@@ -25,7 +25,7 @@ jobs:
       run: |
         copy nwjs\nwjs-v0.48.0-win-ia32\* app\
     
-    - name: Upload
+    - name: Upload EXE
       uses: actions/upload-artifact@v4
       with:
         name: myapp
