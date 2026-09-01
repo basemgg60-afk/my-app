@@ -1,0 +1,13 @@
+{
+  "name": "my-windows-app",
+  "version": "1.0.0",
+  "main": "index.html",
+  "window": {
+    "title": "تطبيقي",
+    "width": 800,
+    "height": 600
+  },
+  "devDependencies": {
+    "nwjs-builder": "^1.0.0"
+  }
+}
